@@ -1,0 +1,61 @@
+﻿<nav class="navbar navbar-expand-lg bg-warning shadow-lg">
+    <div class="container">
+
+        <a href="#" class="navbar-brand">Alicante, <span class="text-danger">2024</span></a>
+@* 
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button> *@
+
+@*         <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">Match</a>
+                    <ul class="dropdown-menu">
+                        @if (matches != null && matches.Any())
+                        {
+                            @foreach (var match in matches)
+                            {
+                                <li><a class="dropdown-item" href="/result/@match.MatchId">@match.MatchText</a></li>
+                            }
+                        }
+                        else
+                        {
+                            <li><a class="dropdown-item disabled" href="#">No courses found</a></li>
+                        }
+                    </ul>
+                </li>
+            </ul>
+        </div> *@
+
+    </div>
+</nav>
+
+@code {
+    [Inject] private IRepository _repo { get; set; }
+    public IEnumerable<MatchHeader> matches { get; set; }
+    public TournamentModel ActiveTournament { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        ActiveTournament = await _repo.GetAciveTournament();
+        if (ActiveTournament == null)
+        {
+            return;
+        }
+        var results = await _repo.TournamentResult(ActiveTournament.TournamentId);
+        if (results != null)
+        {
+            matches = results
+                .GroupBy(m => new { m.MatchDate, m.CourseName })
+                .OrderBy(g => g.Min(m => m.MatchRank))
+                .Select(g => new MatchHeader
+                    {
+                        MatchId = g.First().MatchId,
+                        MatchDate = g.Key.MatchDate,
+                        CourseName = g.Key.CourseName
+                    }).ToList();
+        }
+    }
+}

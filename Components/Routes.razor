@@ -1,0 +1,33 @@
+﻿@using AlicanteWeb.Components.Account.Shared
+@rendermode InteractiveServer
+
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(Program).Assembly">
+        <Found Context="routeData">
+           <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@DetermineLayout(routeData.PageType)" />
+        </Found>
+        <NotFound>
+            <h1>Page not found</h1>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>     
+
+@code {
+    private string temp { get; set; } = string.Empty;
+    private bool admin { get; set; } = false;
+
+    private Type DetermineLayout(Type pageType)
+    {
+        var routeAttribute = pageType.GetCustomAttributes(typeof(RouteAttribute), false)
+                                     .FirstOrDefault() as RouteAttribute;
+
+        temp = routeAttribute?.Template?.TrimStart('/').ToLower() ?? string.Empty;
+        if (temp.StartsWith("admin") || temp.StartsWith("account"))
+        {
+            admin = true;
+            return typeof(Layout.AdminLayout);
+        }
+        return typeof(Layout.MainLayout);
+    }
+}
+

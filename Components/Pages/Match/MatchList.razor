@@ -1,0 +1,66 @@
+﻿@page "/admin/match"
+<BSContainer class="content pb-5">
+    <RadzenCard><h3>Matcher</h3>
+        <h3>Match liste</h3>
+
+@if (matches == null)
+{
+    <p>Henter ...</p>
+}
+else
+{
+    <RadzenDataGrid @ref="matchGrid" AllowAlternatingRows="false" EditMode="DataGridEditMode.Single"
+                    Data="@matches" TItem="MatchViewModel" RowUpdate="@OnUpdateRow" 
+                    RowCreate="@OnCreateRow">
+        <HeaderTemplate>
+            <RadzenStack AlignItems="AlignItems.End">
+                <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle" 
+                    Text="Ny match" Click="@InsertRow" Disabled="@Editing" />
+            </RadzenStack>
+        </HeaderTemplate>
+        <Columns>
+            <RadzenDataGridColumn Property="@nameof(MatchViewModel.MatchDate)" CssClass="col-md-auto" Title="Dato" Frozen="true">
+                <Template Context="match">
+                    @match.MatchDate.ToString("dd MMM, yyyy")
+                </Template>
+                <EditTemplate Context="match">
+                    <RadzenDatePicker Style="width: 100%;" Name="MatchDate" DateFormat="dd-MM-yyyy" @bind-Value="match.MatchDate" />
+                    <RadzenRequiredValidator Text="Skal angives" Component="matchDate" Popup="true" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn Property="@nameof(MatchViewModel.CourseId)" Title="Bane" TextAlign="TextAlign.Center" CssClass="col">
+                <Template Context="match">
+                    @match.CourseName
+                </Template>
+                <EditTemplate Context="match">
+                    <RadzenDropDown @bind-Value="match.CourseId" AllowClear="true" Placeholder="Vælg bane"
+                                    Data="@courses" Style="width: 100%;" 
+                                    TextProperty="CourseName" ValueProperty="CourseId" Name="CourseId">
+                    </RadzenDropDown>
+                </EditTemplate>
+            </RadzenDataGridColumn>
+
+            <RadzenDataGridColumn Context="match" Width="160px" TextAlign="TextAlign.Right" Frozen="true" FrozenPosition="FrozenColumnPosition.Right">
+                <Template Context="match">
+                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="Radzen.ButtonSize.Medium" Click="@(args => EditRow(match))" @onclick:stopPropagation="true">
+                    </RadzenButton>
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="Radzen.ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@(args => DeleteRow(match))" @onclick:stopPropagation="true">
+                    </RadzenButton>
+                </Template>
+                <EditTemplate Context="match">
+                    <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="Radzen.ButtonSize.Medium" Click="@((args) => SaveRow(match))" aria-label="Save">
+                    </RadzenButton>
+                    <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="Radzen.ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@((args) => CancelEdit(match))" aria-label="Cancel">
+                    </RadzenButton>
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="Radzen.ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@(args => DeleteRow(match))" aria-label="Delete">
+                    </RadzenButton>
+                </EditTemplate>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+}
+    </RadzenCard>
+</BSContainer>
+<AppModal />
+<ConfirmDialog @ref="dialog" />

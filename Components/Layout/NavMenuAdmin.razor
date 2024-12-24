@@ -1,0 +1,113 @@
+﻿@implements IDisposable
+
+@inject NavigationManager NavigationManager
+
+<nav class="top-navbar navbar navbar-expand-lg shadow-lg">
+    <div class="container">
+
+        <a href="/admin" class="navbar-brand text-warning">Madsen's<span class="text-danger"> regnskab</span></a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <AuthorizeView>
+                    <Authorized>
+                        <li class="nav-item">
+                            <a class="nav-link" href="admin/tournament">
+                                <small class="small-title"><strong class="text-warning">Turneringer</strong></small>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="admin/course">
+                                <small class="small-title">
+                                    <strong class="text-warning">Baner</strong>
+                                </small>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="admin/player">
+                                <small class="small-title">
+                                    <strong class="text-warning">Spillere</strong>
+                                </small>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="admin/match">
+                                <small class="small-title">
+                                    <strong class="text-warning">Matcher</strong>
+                                </small>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="admin/result">
+                                <small class="small-title">
+                                    <strong class="text-warning">Resultater</strong>
+                                </small>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="admin/account/Manage">
+                                <small class="small-title">
+                                    <strong class="text-warning">@context.User.Identity?.Name</strong>
+                                </small>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <form action="account/Logout" method="post">
+                                <AntiforgeryToken />
+                                <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                                <button type="submit" class="nav-link">
+                                    <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
+                                </button>
+                            </form>
+                        </li>
+                    </Authorized>
+                    <NotAuthorized>
+                        <li class="nav-item2">
+                            <a class="nav-link" href="admin/account/Register">
+                                <small class="small-title">
+                                    <strong class="text-warning">Register</strong>
+                                </small>
+                            </a>
+                        </li>
+                        <li class="nav-item2">
+                            <a class="nav-link" href="admin/account/Login">
+                                <small class="small-title">
+                                    <strong class="text-warning">Login</strong>
+                                </small>
+                            </a>
+                        </li>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </ul>
+        </div>
+    </div>
+</nav>
+@code {
+    private string? currentUrl;
+
+    protected override void OnInitialized()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}

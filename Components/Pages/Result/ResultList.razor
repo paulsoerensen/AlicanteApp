@@ -1,0 +1,97 @@
+﻿@page "/admin/result"
+@rendermode InteractiveServer
+
+<BSContainer class="content pb-5">
+    <RadzenCard>
+@if (matches != null)
+{
+    <RadzenCard Variant="Variant.Flat">
+        <RadzenText TextStyle="TextStyle.H6" TagName="TagName.H3">Matcher</RadzenText>
+        <RadzenDropDown Style="width: 100%; max-width: 300px;" TValue="int" @bind-Value="matchId"
+            Placeholder="Vælg match" AllowFiltering="true" Data="@(matches)" 
+            TextProperty="@nameof(MatchViewModel.MatchText)" 
+            ValueProperty="@nameof(MatchViewModel.MatchId)" 
+            InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Vælg match" }})"
+            Change="@((value) => MatchChanged((int)value))" />
+    </RadzenCard>
+}
+
+<RadzenDataGrid @ref="resultGrid" AllowAlternatingRows="false" EditMode="DataGridEditMode.Single"
+                Data="@results" TItem="ResultViewModel" RowUpdate="@OnUpdateRow" 
+                RowCreate="@OnCreateRow">
+    <HeaderTemplate>
+        <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="add_circle" Text="Nyt resultat" Click="@InsertRow" Disabled="@(Editing || matchId == 0)" />
+    </HeaderTemplate>
+
+    <Columns>
+        <RadzenDataGridColumn Property="@nameof(ResultViewModel.PlayerId)" Title="Spiller" TextAlign="TextAlign.Center" CssClass="col3">
+            <Template Context="result">
+                @result.PlayerName
+            </Template>
+            <EditTemplate Context="result">
+                <RadzenDropDown @bind-Value="result.PlayerId" AllowClear="true" Placeholder="Vælg spiller"
+                                Change="@((value) => PlayerChanged((int)value))"
+                                Data="@players" Style="width: 100%;"
+                                TextProperty="PlayerName" ValueProperty="PlayerId" Name="PlayerId">
+                </RadzenDropDown>
+            </EditTemplate>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn Property="@nameof(ResultViewModel.Hcp)" Title="Hcp" TextAlign="TextAlign.Center" CssClass="col">
+            <Template Context="result">
+                @result.Hcp
+            </Template>
+            <EditTemplate Context="result">
+                <RadzenNumeric @bind-Value="result.Hcp" Style="width:100%" InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Evt. ret" }})" />
+            </EditTemplate>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn Property="@nameof(ResultViewModel.Score)" Title="Score" TextAlign="TextAlign.Center" CssClass="col">
+            <Template Context="result">
+                @result.Score
+            </Template>
+            <EditTemplate Context="result">
+                <RadzenNumeric @bind-Value="result.Score" Style="width:100%" InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Brutto" }})" />
+            </EditTemplate>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn Property="@nameof(ResultViewModel.Birdies)" Title="Birdies" TextAlign="TextAlign.Center" CssClass="col">
+            <Template Context="result">
+                @result.Birdies
+            </Template>
+            <EditTemplate Context="result">
+                <RadzenNumeric @bind-Value="result.Birdies" Style="width:100%" InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Brutto" }})" />
+            </EditTemplate>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn Property="@nameof(ResultViewModel.Par3)" Title="Par 3" TextAlign="TextAlign.Center" CssClass="col">
+            <Template Context="result">
+                @result.Par3
+            </Template>
+            <EditTemplate Context="result">
+                <RadzenNumeric @bind-Value="result.Par3" Style="width:100%" InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "Total på par 3" }})" />
+            </EditTemplate>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn Context="result" Width="160px" TextAlign="TextAlign.Right" Frozen="true" FrozenPosition="FrozenColumnPosition.Right">
+            <Template Context="result">
+                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="Radzen.ButtonSize.Medium" Click="@(args => EditRow(result))" @onclick:stopPropagation="true">
+                </RadzenButton>
+                <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="Radzen.ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@(args => DeleteRow(result))" @onclick:stopPropagation="true">
+                </RadzenButton>
+            </Template>
+            <EditTemplate Context="result">
+                <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="Radzen.ButtonSize.Medium" Click="@((args) => SaveRow(result))" aria-label="Save">
+                </RadzenButton>
+                <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="Radzen.ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@((args) => CancelEdit(result))" aria-label="Cancel">
+                </RadzenButton>
+                <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="Radzen.ButtonSize.Medium" class="rz-my-1 rz-ms-1" Click="@(args => DeleteRow(result))" aria-label="Delete">
+                </RadzenButton>
+            </EditTemplate>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+    </RadzenCard>
+</BSContainer>
+<AppModal/>
+<ConfirmDialog @ref="dialog" />

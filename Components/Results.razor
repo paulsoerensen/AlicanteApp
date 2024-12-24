@@ -1,0 +1,111 @@
+﻿@page "/"
+@rendermode InteractiveServer
+
+<BSContainer class="content pb-5">
+    <RadzenCard>
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" class="rz-p-4 rz-mb-8 rz-border-radius-1" Style="border: var(--rz-grid-cell-border);">
+            <RadzenDropDown @bind-Value="@MatchId" 
+                TextProperty="MatchText" 
+                ValueProperty="MatchId"
+                Data="@matches" class="rz-display-inline-flex rz-display-xl-none" />
+        </RadzenStack>
+    </RadzenCard>
+
+    <RadzenCard>
+        @if (scores == null)
+    {
+        <p>Henter ...</p>
+    }
+    else
+    {
+        <RadzenTabs TabPosition="TabPosition.Top" RenderMode="TabRenderMode.Client">
+            <Tabs>
+
+                <RadzenTabsItem Text="Scores">
+                    <RadzenDataGrid ColumnWidth="50px" Data="@scores.Where(m => m.MatchId == MatchId)" TItem="MatchResultViewModel">
+                        <Columns>
+                                <RadzenDataGridColumn Property="@nameof(MatchResultViewModel.PlayerName)" Title="Spiller" MinWidth="150px" TextAlign="TextAlign.Left" />
+                                <RadzenDataGridColumn Property="@nameof(MatchResultViewModel.Score)" Title="Brutto" TextAlign="TextAlign.Center" />
+                                <RadzenDataGridColumn Property="@nameof(MatchResultViewModel.Hcp)" Title="ATS" TextAlign="TextAlign.Center" />
+                                <RadzenDataGridColumn Property="@nameof(MatchResultViewModel.Netto)" Title="Netto" TextAlign="TextAlign.Center" />
+                        </Columns>
+                    </RadzenDataGrid>
+                </RadzenTabsItem>
+
+                <RadzenTabsItem Text="Par 3">
+                        <RadzenDataGrid ColumnWidth="50px" Data="@par3s.Where(m => m.MatchId == MatchId)" TItem="MatchResultViewModel">
+                        <Columns>
+                                <RadzenDataGridColumn Property="@nameof(MatchResultViewModel.PlayerName)" Title="Spiller" TextAlign="TextAlign.Left" />
+                            <RadzenDataGridColumn Property="@nameof(MatchResultViewModel.Par3)" Title="Par 3" TextAlign="TextAlign.Center" />
+                        </Columns>
+                    </RadzenDataGrid>
+                </RadzenTabsItem>
+
+
+                <RadzenTabsItem Text="Birdies">
+                        <RadzenDataGrid ColumnWidth="50px" Data="@birdies.Where(m => m.MatchId == MatchId)" TItem="MatchResultViewModel">
+                        <Columns>
+                                <RadzenDataGridColumn Property="@nameof(MatchResultViewModel.PlayerName)" Title="Spiller" TextAlign="TextAlign.Left" />
+                                <RadzenDataGridColumn Property="@nameof(MatchResultViewModel.Birdies)" Title="Birdies" TextAlign="TextAlign.Center" />
+                        </Columns>
+                    </RadzenDataGrid>
+                </RadzenTabsItem>                
+    
+            </Tabs>
+        </RadzenTabs>
+    }
+    </RadzenCard>
+</BSContainer>
+
+@code {
+
+    public int? MatchId { get; set; } = -1;
+
+    [Inject] private IRepository _repo { get; set; }
+
+    public IEnumerable<MatchHeader> matches { get; set; }
+    public IEnumerable<MatchResultViewModel> scores { get; set; }
+    public IEnumerable<MatchResultViewModel> birdies { get; set; }
+    public IEnumerable<MatchResultViewModel> par3s { get; set; }
+
+    // public string MatchText { get; set; } = string.Empty;
+    public TournamentModel ActiveTournament { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (MatchId.HasValue)
+        {
+            // if (MatchId > 0)
+            // {
+            //     MatchViewModel m = await _repo.GetMatch(MatchId.Value);
+            //     MatchText = $"{m!.CourseName}, {m!.MatchDate:ddd MMM, yyyy}";
+            // }
+            // else
+            // {
+            //     MatchText = "Total";
+            // }
+
+            ActiveTournament = await _repo.GetAciveTournament();
+            if (ActiveTournament == null)
+            {
+                return;
+            }
+            var results = await _repo.TournamentResult(ActiveTournament.TournamentId);
+            if (results != null)
+            {
+                scores = results.OrderBy(m => m.Netto).ThenBy(m => m.HcpIndex);
+                birdies = results.OrderByDescending(m => m.Birdies).ThenBy(m => m.HcpIndex);
+                par3s = results.OrderBy(m => m.Par3).ThenBy(m => m.HcpIndex);
+                matches = results
+                    .GroupBy(m => new { m.MatchDate, m.CourseName })
+                    .OrderBy(g => g.Min(m => m.MatchRank))
+                    .Select(g => new MatchHeader
+                        {
+                            MatchId = g.First().MatchId,
+                            MatchDate = g.Key.MatchDate,
+                            CourseName = g.Key.CourseName
+                        }).ToList();
+            }
+        }
+    }
+}

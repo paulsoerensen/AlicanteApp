@@ -1,0 +1,115 @@
+﻿@page "/leaderboard/scores"
+@using Newtonsoft.Json
+@rendermode InteractiveServer
+
+
+<BSContainer class="content pb-5">
+    <RadzenCard>
+@if (matches == null)
+{
+    <p>Henter ...</p>
+}
+else
+{
+    <RadzenTabs TabPosition="TabPosition.Top" RenderMode="TabRenderMode.Client">
+        <Tabs>
+            <RadzenTabsItem Text="Scores">
+                <RadzenTabs TabPosition="TabPosition.Top" RenderMode="TabRenderMode.Client">
+                    <Tabs>
+                        @foreach (var match in matches)
+                        {
+                            <RadzenTabsItem Text="@match.CourseName">
+                                <RadzenDataGrid ColumnWidth="50px" Data="@scores.Where(m => m.MatchId == match.MatchId)" TItem="MatchResultViewModel">
+                                    <Columns>
+                                        <RadzenDataGridColumn Property="@nameof(MatchResultViewModel.PlayerName)" Title="Spiller" MinWidth="150px" />
+                                        <RadzenDataGridColumn Property="@nameof(MatchResultViewModel.Score)" Title="Brutto" />
+                                        <RadzenDataGridColumn Property="@nameof(MatchResultViewModel.Hcp)" Title="ATS" />
+                                        <RadzenDataGridColumn Property="@nameof(MatchResultViewModel.Netto)" Title="Netto" />
+                                    </Columns>
+                                </RadzenDataGrid>
+                            </RadzenTabsItem>
+                        }
+                    </Tabs>
+                </RadzenTabs>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Par 3">
+                <RadzenTabs TabPosition="TabPosition.Top" RenderMode="TabRenderMode.Client">
+                    <Tabs>
+                        @foreach (var match in matches)
+                        {
+                            <RadzenTabsItem Text="@match.CourseName">
+                                <RadzenDataGrid ColumnWidth="50px" Data="@par3s.Where(m => m.MatchId == match.MatchId)" TItem="MatchResultViewModel">
+                                    <Columns>
+                                        <RadzenDataGridColumn Property="@nameof(MatchResultViewModel.PlayerName)" Title="Spiller" />
+                                        <RadzenDataGridColumn Property="@nameof(MatchResultViewModel.Par3)" Title="Par 3" />
+                                    </Columns>
+                                </RadzenDataGrid>
+                            </RadzenTabsItem>
+                        }
+                    </Tabs>
+                </RadzenTabs>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Birdies">
+                <RadzenTabs TabPosition="TabPosition.Top" RenderMode="TabRenderMode.Client">
+                    <Tabs>
+                        @foreach (var match in matches)
+                        {
+                            <RadzenTabsItem Text="@match.CourseName">
+                                <RadzenDataGrid ColumnWidth="50px" Data="@birdies.Where(m => m.MatchId == match.MatchId)" TItem="MatchResultViewModel">
+                                    <Columns>
+                                        <RadzenDataGridColumn Property="@nameof(MatchResultViewModel.PlayerName)" Title="Spiller" />
+                                        <RadzenDataGridColumn Property="@nameof(MatchResultViewModel.Birdies)" Title="Birdies" />
+                                    </Columns>
+                                </RadzenDataGrid>
+                            </RadzenTabsItem>
+                        }
+                    </Tabs>
+                </RadzenTabs>
+            </RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
+}
+    </RadzenCard>
+</BSContainer>
+
+@code {
+
+    [Parameter]
+    public int MatchId { get; set; }
+
+    [Inject] private IRepository _repo { get; set; }
+
+    public IEnumerable<MatchResultViewModel> scores { get; set; }
+    public IEnumerable<MatchResultViewModel> birdies { get; set; }
+    public IEnumerable<MatchResultViewModel> par3s { get; set; }
+    public IEnumerable<MatchHeader> matches { get; set; }
+
+    public TournamentModel ActiveTournament { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        ActiveTournament = await _repo.GetAciveTournament();
+        if (ActiveTournament == null)
+        {
+            return;
+        }
+        var results = await _repo.TournamentResult(ActiveTournament.TournamentId);
+        if (results != null)
+        {
+            scores = results.OrderBy(m => m.Netto).ThenBy(m => m.HcpIndex);
+            birdies = results.OrderByDescending(m => m.Birdies).ThenBy(m => m.HcpIndex);
+            par3s = results.OrderBy(m => m.Par3).ThenBy(m => m.HcpIndex);
+            matches = results
+                .GroupBy(m => new { m.MatchDate, m.CourseName })
+                .OrderBy(g => g.Min(m => m.MatchRank))
+                .Select(g => new MatchHeader
+                    {
+                        MatchId = g.First().MatchId,
+                        MatchDate = g.Key.MatchDate,
+                        CourseName = g.Key.CourseName
+                    }).ToList();
+        }
+    }
+
+}
